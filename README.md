@@ -29,7 +29,8 @@ To:
     "values.3.b": 2,
     "values.4.a": 1,
     "values.4.b": 2
-  }, {
+  },
+  {
     "values.0.a": 1,
     "values.1.a": 1,
     "values.1.b.0.values.0": 1,
