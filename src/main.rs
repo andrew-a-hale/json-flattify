@@ -1,43 +1,39 @@
 use serde_json::Value;
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 
-fn json_to_path_map(value: &Value) -> HashMap<String, String> {
-    let mut map = HashMap::new();
-    build_path_map(value, &mut map, "".to_string());
-    map
+fn json_to_path_vec(value: &Value) -> Vec<(String, String)> {
+    let mut vec = Vec::new();
+    build_path_vec(value, &mut vec, String::new());
+    vec
 }
 
-fn build_path_map(value: &Value, map: &mut HashMap<String, String>, current_path: String) {
+fn build_path_vec(value: &Value, vec: &mut Vec<(String, String)>, current_path: String) {
     match value {
         Value::Object(obj) => {
             for (key, val) in obj {
-                let new_path = if current_path.is_empty() {
+                let current_path = if current_path.is_empty() {
                     key.to_string()
                 } else {
                     format!("{}.{}", current_path, key)
                 };
-                build_path_map(val, map, new_path);
+
+                build_path_vec(val, vec, current_path);
             }
         }
         Value::Array(arr) => {
             for (index, val) in arr.iter().enumerate() {
-                let new_path = format!("{}.{}", current_path, index);
-                build_path_map(val, map, new_path);
+                let current_path = if current_path.is_empty() {
+                    index.to_string()
+                } else {
+                    format!("{}.{}", current_path, index)
+                };
+
+                build_path_vec(val, vec, current_path.clone());
             }
         }
-        Value::String(s) => {
-            map.insert(current_path, s.to_string());
-        }
-        Value::Number(n) => {
-            map.insert(current_path, n.to_string());
-        }
-        Value::Bool(b) => {
-            map.insert(current_path, b.to_string());
-        }
-        Value::Null => {
-            map.insert(current_path, "null".to_string());
+        _ => {
+            vec.push((current_path, value.to_string()));
         }
     }
 }
@@ -48,6 +44,6 @@ fn main() {
     let json_value: Value = serde_json::from_reader(buf).unwrap();
 
     for _ in 0..10 {
-        let _ = json_to_path_map(&json_value);
+        let _ = json_to_path_vec(&json_value);
     }
 }
