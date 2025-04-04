@@ -1,14 +1,19 @@
 use serde_json::Value;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 
-fn json_to_path_vec(value: &Value) -> Vec<(String, String)> {
+fn json_to_path_vec(value: &Value) -> HashMap<String, Value> {
     let mut vec = Vec::new();
     build_path_vec(value, &mut vec, String::new());
-    vec
+    let mut map: HashMap<String, Value> = HashMap::new();
+    vec.iter()
+        .map(|(x, y)| map.insert(x.clone(), y.clone()))
+        .for_each(|_| {});
+    map
 }
 
-fn build_path_vec(value: &Value, vec: &mut Vec<(String, String)>, current_path: String) {
+fn build_path_vec(value: &Value, vec: &mut Vec<(String, Value)>, current_path: String) {
     match value {
         Value::Object(obj) => {
             for (key, val) in obj {
@@ -32,8 +37,8 @@ fn build_path_vec(value: &Value, vec: &mut Vec<(String, String)>, current_path: 
                 build_path_vec(val, vec, current_path.clone());
             }
         }
-        _ => {
-            vec.push((current_path, value.to_string()));
+        v => {
+            vec.push((current_path, v.clone()));
         }
     }
 }
@@ -43,7 +48,5 @@ fn main() {
     let buf = BufReader::new(file);
     let json_value: Value = serde_json::from_reader(buf).unwrap();
 
-    for _ in 0..10 {
-        let _ = json_to_path_vec(&json_value);
-    }
+    json_to_path_vec(&json_value);
 }
