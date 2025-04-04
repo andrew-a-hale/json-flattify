@@ -1,5 +1,5 @@
 import os
-import orjson
+import json
 
 PATH = os.path.dirname(__file__)
 
@@ -22,7 +22,7 @@ def _flatten(obj: dict, path: str = "", tuples: list = []) -> list:
 def flatten_json(file: str) -> list:
     with open(os.path.join(PATH, file)) as f:
         tuples = []
-        obj = orjson.loads(f.read())
+        obj = json.loads(f.read())
         tuples.extend(_flatten(obj, "", []))
 
     return [{x: y for x, y in tuples}]
@@ -32,7 +32,7 @@ def flatten_jsonl(file: str) -> list:
     lines = []
     with open(os.path.join(PATH, file)) as f:
         for line in f:
-            obj = orjson.loads(line)
+            obj = json.loads(line)
             lines.append({x: y for x, y in _flatten(obj, "", [])})
 
     return lines
