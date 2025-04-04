@@ -1,31 +1,20 @@
 import os
-import json
+import orjson
 
 PATH = os.path.dirname(__file__)
 
 
-def _flatten_list(obj: list, path: str = "", tuples: list = []) -> list:
-    for i, v in enumerate(obj):
-        new_path = ".".join(x for x in [path, str(i)] if x)
-        if isinstance(v, dict):
-            _flatten_obj(v, new_path, tuples)
-        elif isinstance(v, list):
-            _flatten_list(v, new_path, tuples)
-        else:
-            tuples.append((new_path, v))
-
-    return tuples
-
-
-def _flatten_obj(obj: dict, path: str = "", tuples: list = []) -> list:
-    for k, v in obj.items():
-        new_path = ".".join(x for x in [path, k] if x)
-        if isinstance(v, dict):
-            _flatten_obj(v, new_path, tuples)
-        elif isinstance(v, list):
-            _flatten_list(v, new_path, tuples)
-        else:
-            tuples.append((new_path, v))
+def _flatten(obj: dict, path: str = "", tuples: list = []) -> list:
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            new_path = f"{path}.{k}" if path else k
+            _flatten(v, new_path, tuples)
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            new_path = f"{path}.{i}" if path else str(i)
+            _flatten(v, new_path, tuples)
+    else:
+        tuples.append((path, obj))
 
     return tuples
 
@@ -33,13 +22,8 @@ def _flatten_obj(obj: dict, path: str = "", tuples: list = []) -> list:
 def flatten_json(file: str) -> list:
     with open(os.path.join(PATH, file)) as f:
         tuples = []
-        obj = json.load(f)
-        if isinstance(obj, dict):
-            tuples.extend(_flatten_obj(obj, "", []))
-        elif isinstance(obj, list):
-            tuples.extend(_flatten_list(obj, "", []))
-        else:
-            tuples.append(("value", obj))
+        obj = orjson.loads(f.read())
+        tuples.extend(_flatten(obj, "", []))
 
     return [{x: y for x, y in tuples}]
 
@@ -48,11 +32,11 @@ def flatten_jsonl(file: str) -> list:
     lines = []
     with open(os.path.join(PATH, file)) as f:
         for line in f:
-            obj = json.loads(line)
-            lines.append({x: y for x, y in _flatten_obj(obj, "", [])})
+            obj = orjson.loads(line)
+            lines.append({x: y for x, y in _flatten(obj, "", [])})
 
     return lines
 
 
 if __name__ == "__main__":
-    print(flatten_jsonl("tests/lines-complex.jsonl"))
+    flatten_json("tests/large-file.json")
